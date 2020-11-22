@@ -19,4 +19,9 @@
 
     <!-- Buttons Text -->
     <string name="button_time">START TIMER</string>
+    <string name="serverPortConfigId">serverPortConfig</string>
+    <string name="port">Porta</string>
+    <string name="ServerAddress">Endereço do Servidor</string>
+    <string name="btn_salvar">Salvar</string>
+    <string name="dnsServerAddress">Endereço DNS do Servidor</string>
 </resources>

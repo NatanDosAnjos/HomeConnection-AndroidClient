@@ -4,7 +4,7 @@
     <PreferenceCategory android:title="Preference category">
 
         <EditTextPreference
-            android:defaultValue="Default value"
+            android:defaultValue="false"
             android:key="edit_text_preference_1"
             android:selectAllOnFocus="true"
             android:singleLine="true"
