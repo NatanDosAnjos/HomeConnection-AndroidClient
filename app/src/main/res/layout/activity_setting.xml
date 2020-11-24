@@ -12,14 +12,15 @@
         android:id="@+id/editTextServer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
         android:ems="10"
         android:hint="@string/ServerAddress"
-        android:inputType="textUri"
+        android:inputType="textNoSuggestions"
+        android:textSize="18sp"
         app:layout_constraintBottom_toTopOf="@+id/editTextPort"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText_dnsServer" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <EditText
         android:id="@+id/editTextPort"
@@ -29,7 +30,8 @@
         android:ems="10"
         android:hint="@string/port"
         android:inputType="number"
-        app:layout_constraintBottom_toTopOf="@+id/btnSalvar"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@+id/editText_dnsServer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextServer" />
@@ -43,18 +45,45 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextPort" />
+        app:layout_constraintTop_toBottomOf="@+id/editText_userPassword" />
 
     <EditText
         android:id="@+id/editText_dnsServer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
         android:ems="10"
         android:hint="@string/dnsServerAddress"
         android:inputType="textUri"
-        app:layout_constraintBottom_toTopOf="@+id/editTextServer"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@+id/editText_user"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed" />
+        app:layout_constraintTop_toBottomOf="@+id/editTextPort" />
+
+    <EditText
+        android:id="@+id/editText_user"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:ems="10"
+        android:hint="@string/user"
+        android:inputType="textPersonName"
+        app:layout_constraintBottom_toTopOf="@+id/editText_userPassword"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_dnsServer" />
+
+    <EditText
+        android:id="@+id/editText_userPassword"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:ems="10"
+        android:hint="@string/userPassword"
+        android:inputType="textPassword"
+        app:layout_constraintBottom_toTopOf="@+id/btnSalvar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_user" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -6,9 +6,9 @@ import android.content.SharedPreferences
 import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.preference.PreferenceManager
 import com.example.automatize.activity.SettingActivity
 import com.example.automatize.handler.MqttCallbackHandler
+import com.example.automatize.helper.PrefsConfig
 import com.example.automatize.util.changeUi
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
@@ -25,84 +25,53 @@ class ServerToConnect(private val context: Context, private val myView: View) {
         val CLIENT_ID = MqttClient.generateClientId()!!
 
         @JvmStatic
-        val PASSWORD_KEY_NAME = "password"
-
-        @JvmStatic
-        val LOCAL_IP_KEY_NAME = "ip"
-
-        @JvmStatic
-        val USER_KEY_NAME = "user"
-
-        @JvmStatic
-        val PORT_KEY_NAME = "port"
-
-        @JvmStatic
-        val DNS_KEY_NAME = "dns"
-
-        @JvmStatic
         val devicesList = mutableListOf<Device>()
     }
 
-    private lateinit var sharedPreferencesListener: SharedPreferences.OnSharedPreferenceChangeListener
-    val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+    private lateinit var sharedPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener
     lateinit var qualityOfServiceArray: IntArray
     lateinit var subscribeArray: Array<String>
     private val mqttConnectOptions = MqttConnectOptions()
     val clientMqtt: MqttAndroidClient
+    private val prefsConfig = PrefsConfig()
     var runnable = Runnable { }
-    var connected: Boolean = false
-    private var serverLocalIp = prefs.getString(LOCAL_IP_KEY_NAME, "null").toString()
+
+
+    private var serverLocalIp = prefsConfig.getValueOfPreferences(context, PrefsConfig.LOCAL_IP_KEY_NAME)
         set(value) {
             field = value
-            if (value.isNotEmpty())
-                changeServerURIs(localIp = value, dns = "n")
-                reconnectAll(value)
+            if (value.isNotEmpty()) {
+                changeServerURIs(value, serverDns)
+            }
         }
-    private var serverDns = prefs.getString(DNS_KEY_NAME, "null").toString()
-        set(value) {
-            field = value
-            if (value.isNotEmpty())
-                changeServerURIs(localIp = "n", dns = value)
-                reconnectAll(value)
-        }
-    private var password = prefs.getString(PASSWORD_KEY_NAME, "null").toString()
+
+    private var serverDns = prefsConfig.getValueOfPreferences(context, PrefsConfig.DNS_KEY_NAME)
+
+    private var password = prefsConfig.getValueOfPreferences(context, PrefsConfig.PASSWORD_KEY_NAME)
         set(value) {
             field = value
             if (value.isNotEmpty()) {
                 mqttConnectOptions.password = value.toCharArray()
-                reconnectAll(value)
             }
         }
-    private var user = prefs.getString(USER_KEY_NAME, "null").toString()
+    private var user = prefsConfig.getValueOfPreferences(context, PrefsConfig.USER_KEY_NAME)
         set(value) {
             field = value
             if (value.isNotEmpty()) {
                 mqttConnectOptions.userName = value
-                reconnectAll(value)
             }
         }
-    private var port = prefs.getString(PORT_KEY_NAME, "null").toString()
-        set(value) {
-            field = value
-            if (value.isNotEmpty())
-                reconnectAll(value)
-        }
-    private val serverURIs = mutableListOf<String>("$serverLocalIp:$port", "$serverDns:$port")
+    private var port = prefsConfig.getValueOfPreferences(context, PrefsConfig.PORT_KEY_NAME)
+    private val serverURIs = mutableListOf("$serverLocalIp:$port", "$serverDns:$port")
+
 
 
     init {
-        registerSharedPreferencesListener()
         try {
             mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
-            changeUi(Runnable {
-                Snackbar.make(myView, "IP Local ou DNS informados são inválidos", Snackbar.LENGTH_INDEFINITE)
-                    .setAction("Alterar") {
-                        context.startActivity(Intent(context, SettingActivity::class.java))
-                    }
-                    .show()
-            })
+            showSnackbar("IP ou DNS são inválidos")
         }
         mqttConnectOptions.isAutomaticReconnect = true
         mqttConnectOptions.connectionTimeout = 2
@@ -110,29 +79,16 @@ class ServerToConnect(private val context: Context, private val myView: View) {
 
         clientMqtt = MqttAndroidClient(context, "$serverLocalIp:$port", CLIENT_ID)
         clientMqtt.setCallback(MqttCallbackHandler(context))
+        connect()
     }
 
 
     private fun changeServerURIs(localIp: String, dns: String) {
-        if (localIp != "n") {
-            serverURIs[0] = localIp
-        }
-
-        if (dns != "n") {
-            serverURIs[1] = dns
-        }
-        //TO REMOVE
-        println(serverURIs.toString())
-    }
+        serverURIs[0] = "$localIp:$port"
+        serverURIs[1] = "$dns:$port"
+        mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
 
 
-    fun reconnectAll(value: String = "") {
-        if (clientMqtt.isConnected) {
-            clientMqtt.disconnectForcibly(1)
-            connect()
-        } else {
-            connect()
-        }
     }
 
 
@@ -144,8 +100,8 @@ class ServerToConnect(private val context: Context, private val myView: View) {
             }
 
             override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                showSnackbar("Falha ao conectar com ${asyncActionToken?.client?.serverURI}")
                 Log.i("MQTT_CONNECTION", "Falha ao Conectar", exception)
-                connected = false
             }
         })
     }
@@ -223,23 +179,39 @@ class ServerToConnect(private val context: Context, private val myView: View) {
     }
 
 
-    private fun registerSharedPreferencesListener() {
-        sharedPreferencesListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+    fun registerSharedPreferencesListener(additionalRunnable: Runnable  = Runnable {}) {
+        sharedPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedP, key ->
             when (key) {
 
-                LOCAL_IP_KEY_NAME -> {
-                    serverLocalIp = key
+                PrefsConfig.LOCAL_IP_KEY_NAME -> {
+                    serverLocalIp = sharedP.getString(key, null)!!
                 }
-                DNS_KEY_NAME -> {
-                    serverDns = key
+                PrefsConfig.PASSWORD_KEY_NAME -> {
+                    password = sharedP.getString(key, null)!!
                 }
-                PASSWORD_KEY_NAME -> password = key
-                USER_KEY_NAME -> user = key
-                PORT_KEY_NAME -> port = key
-
+                PrefsConfig.DNS_KEY_NAME -> {
+                    serverDns = sharedP.getString(key, null)!!
+                }
+                PrefsConfig.USER_KEY_NAME -> {
+                    user = sharedP.getString(key, null)!!
+                }
+                PrefsConfig.PORT_KEY_NAME -> {
+                    port = sharedP.getString(key, null)!!
+                }
             }
+            additionalRunnable.run()
         }
-        prefs.registerOnSharedPreferenceChangeListener(sharedPreferencesListener)
+
+        PrefsConfig().registerListener(context, sharedPrefsListener)
+    }
+
+    private fun showSnackbar(message: String) {
+        changeUi(Runnable {
+            Snackbar.make(myView, message, Snackbar.LENGTH_LONG)
+                .setAction("Alterar") {
+                    context.startActivity(Intent(context, SettingActivity::class.java))
+                }.show()
+        })
     }
 
 

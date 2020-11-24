@@ -1,4 +1,4 @@
-package com.example.automatize
+package com.example.automatize.activity
 
 import android.content.Intent
 import android.os.Bundle
@@ -7,7 +7,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.automatize.activity.SettingActivity
+import com.example.automatize.R
 import com.example.automatize.adapter.MainAdapter
 import com.example.automatize.model.Device
 import com.example.automatize.model.ServerToConnect
@@ -24,7 +24,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+
         server = ServerToConnect(this, recyclerView)
+        server.registerSharedPreferencesListener()
         server.qualityOfServiceArray = intArrayOf(2)
         server.subscribeArray = arrayOf(Device.TOPIC_DEVICES_JSON)
 
@@ -43,7 +45,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStart() {
-        server.reconnectAll()
         super.onStart()
     }
 

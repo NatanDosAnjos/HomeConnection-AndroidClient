@@ -1,42 +1,83 @@
 package com.example.automatize.activity
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
-import androidx.preference.PreferenceManager
+import androidx.appcompat.app.AppCompatActivity
 import com.example.automatize.R
-import com.example.automatize.model.ServerToConnect
+import com.example.automatize.helper.PrefsConfig
 
 class SettingActivity : AppCompatActivity() {
+
+    private val prefs = PrefsConfig()
+    private val protocol = "tcp"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setting)
 
-        val serverView = findViewById<EditText>(R.id.editTextServer)
-        val portView = findViewById<EditText>(R.id.editTextPort)
-        val btnSave = findViewById<Button>(R.id.btnSalvar)
-        val dnsView = findViewById<EditText>(R.id.editText_dnsServer)
+        val oldDns = removeProtocolFromSharedPreferences(
+            prefs.getValueOfPreferences(
+                this, PrefsConfig.DNS_KEY_NAME
+            )
+        )
+        val oldIp = removeProtocolFromSharedPreferences(
+            prefs.getValueOfPreferences(
+                this, PrefsConfig.LOCAL_IP_KEY_NAME
+            )
+        )
+        val oldUser = prefs.getValueOfPreferences(this, PrefsConfig.USER_KEY_NAME)
+        val oldUserPassword = prefs.getValueOfPreferences(this, PrefsConfig.PASSWORD_KEY_NAME)
+        val oldPort = prefs.getValueOfPreferences(this, PrefsConfig.PORT_KEY_NAME)
 
+        val dnsView = findViewById<EditText>(R.id.editText_dnsServer)
+        dnsView.setText(oldDns)
+        val serverIpView = findViewById<EditText>(R.id.editTextServer)
+        serverIpView.setText(oldIp)
+        val portView = findViewById<EditText>(R.id.editTextPort)
+        portView.setText(oldPort)
+        val userView = findViewById<EditText>(R.id.editText_user)
+        val userPasswordView = findViewById<EditText>(R.id.editText_userPassword)
+
+        val btnSave = findViewById<Button>(R.id.btnSalvar)
         btnSave.setOnClickListener {
-            val server = serverView.text.toString()
+            val userPassword = userPasswordView.text.toString()
+            val serverIp = serverIpView.text.toString()
+            val user = userView.text.toString()
             val port = portView.text.toString()
             val dns = dnsView.text.toString()
+            val map = mutableMapOf<String, String>()
 
-            if (server.isNotEmpty() && port.isNotEmpty()) {
-                val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-                sharedPreferences.edit()
-                    .putString(ServerToConnect.LOCAL_IP_KEY_NAME, "tcp://$server")
-                    .putString(ServerToConnect.DNS_KEY_NAME, "tcp://$dns")
-                    .putString(ServerToConnect.PORT_KEY_NAME, port)
-                    .putString(ServerToConnect.USER_KEY_NAME, "pi")
-                    .putString(ServerToConnect.PASSWORD_KEY_NAME, "D0s@nj0s")
-                    .apply()
-
-                finish()
+            if (port != oldPort && port != "") {
+                map[PrefsConfig.PORT_KEY_NAME] = port
             }
 
-        }
+            if (serverIp != oldIp && serverIp != "") {
+                map[PrefsConfig.LOCAL_IP_KEY_NAME] = "$protocol://$serverIp"
+            }
 
+            if (dns != oldDns && dns != "") {
+                map[PrefsConfig.DNS_KEY_NAME] = "$protocol://$dns"
+            }
+
+            if (user != oldUser && user != "") {
+                map[PrefsConfig.USER_KEY_NAME] = user
+            }
+
+            if (userPassword != oldUserPassword && userPassword != "") {
+                map[PrefsConfig.PASSWORD_KEY_NAME] = userPassword
+            }
+
+            prefs.saveOnPreferences(this, map)
+            finish()
+        }
+    }
+
+    /**
+     * @param text O texto que será separado
+     * @return O texto enviado sem o prefixo tcp://
+     */
+    private fun removeProtocolFromSharedPreferences(text: String): String {
+        return text.removePrefix("$protocol://")
     }
 }
