@@ -13,10 +13,7 @@ import com.example.automatize.util.changeUi
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import org.eclipse.paho.android.service.MqttAndroidClient
-import org.eclipse.paho.client.mqttv3.IMqttActionListener
-import org.eclipse.paho.client.mqttv3.IMqttToken
-import org.eclipse.paho.client.mqttv3.MqttClient
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import org.eclipse.paho.client.mqttv3.*
 
 class ServerToConnect(private val context: Context, private val myView: View) {
 
@@ -32,7 +29,7 @@ class ServerToConnect(private val context: Context, private val myView: View) {
     lateinit var qualityOfServiceArray: IntArray
     lateinit var subscribeArray: Array<String>
     private val mqttConnectOptions = MqttConnectOptions()
-    val clientMqtt: MqttAndroidClient
+    var clientMqtt: MqttAndroidClient
     private val prefsConfig = PrefsConfig()
     var runnable = Runnable { }
 
@@ -78,7 +75,8 @@ class ServerToConnect(private val context: Context, private val myView: View) {
         mqttConnectOptions.isCleanSession = false
 
         clientMqtt = MqttAndroidClient(context, "$serverLocalIp:$port", CLIENT_ID)
-        clientMqtt.setCallback(MqttCallbackHandler(context))
+
+        registerSharedPreferencesListener()
         connect()
     }
 
@@ -87,15 +85,17 @@ class ServerToConnect(private val context: Context, private val myView: View) {
         serverURIs[0] = "$localIp:$port"
         serverURIs[1] = "$dns:$port"
         mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
-
+        reconnect()
 
     }
 
 
     private fun connect() {
+        clientMqtt = MqttAndroidClient(context, "$serverLocalIp:$port", CLIENT_ID)
+        clientMqtt.setCallback(MqttCallbackHandler(context))
+
         clientMqtt.connect(mqttConnectOptions, null, object : IMqttActionListener {
             override fun onSuccess(asyncActionToken: IMqttToken?) {
-                Toast.makeText(context, "Conectado", Toast.LENGTH_SHORT).show()
                 subscribeOnTopics()
             }
 
@@ -104,6 +104,12 @@ class ServerToConnect(private val context: Context, private val myView: View) {
                 Log.i("MQTT_CONNECTION", "Falha ao Conectar", exception)
             }
         })
+
+    }
+
+    private fun reconnect() {
+        clientMqtt.setCallback(MqttCallbackHandler(context, false))
+        clientMqtt.disconnect().isComplete.let { connect() }
     }
 
 
@@ -179,7 +185,7 @@ class ServerToConnect(private val context: Context, private val myView: View) {
     }
 
 
-    fun registerSharedPreferencesListener(additionalRunnable: Runnable  = Runnable {}) {
+    private fun registerSharedPreferencesListener() {
         sharedPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedP, key ->
             when (key) {
 
@@ -199,7 +205,6 @@ class ServerToConnect(private val context: Context, private val myView: View) {
                     port = sharedP.getString(key, null)!!
                 }
             }
-            additionalRunnable.run()
         }
 
         PrefsConfig().registerListener(context, sharedPrefsListener)

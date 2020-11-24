@@ -26,7 +26,6 @@ class MainActivity : AppCompatActivity() {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
 
         server = ServerToConnect(this, recyclerView)
-        server.registerSharedPreferencesListener()
         server.qualityOfServiceArray = intArrayOf(2)
         server.subscribeArray = arrayOf(Device.TOPIC_DEVICES_JSON)
 
@@ -34,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         viewAdapter = MainAdapter(ServerToConnect.devicesList, server)
 
         server.runnable = Runnable {
-            changeUi(Runnable {viewAdapter.notifyDataSetChanged()})
+            changeUi(Runnable { viewAdapter.notifyDataSetChanged() })
         }
 
         recyclerView.apply {
