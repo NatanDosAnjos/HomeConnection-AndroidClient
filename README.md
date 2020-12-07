@@ -27,3 +27,8 @@ Automatize é uma aplicação simples, que possibilita a comunicação com dispo
 ### Contato
 
 [![LinkedIn][linkedin-shield]][linkedin-url]
+
+
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://www.linkedin.com/in/natanael-sousa-94337b119
