@@ -20,3 +20,10 @@ Automatize é uma aplicação simples, que possibilita a comunicação com dispo
 - [ ] Melhorar retorno do tratamento de erros de conexão
 - [ ] Possibilidade de conexão através de DNS
 - [ ] Refinar Layout
+
+---
+
+<!-- CONTATO -->
+### Contato
+
+[![LinkedIn][linkedin-shield]][linkedin-url]
