@@ -4,9 +4,8 @@ Automatize é uma aplicação simples, que possibilita a comunicação com dispo
 
 #### Bibliotecas Externas Utilizadas
 
-* [Paho](https://github.com/eclipse/paho.mqtt.android)  
-* [Gson](https://github.com/google/gson)
-
+* Para conexão MQTT no Android: [Paho](https://github.com/eclipse/paho.mqtt.android)  
+* Para conversão de strings Json em Objetos Java: [Gson](https://github.com/google/gson)
 
 --- 
 
