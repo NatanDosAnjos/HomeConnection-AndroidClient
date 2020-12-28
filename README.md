@@ -15,7 +15,7 @@ Automatize é uma aplicação simples, que possibilita a comunicação com dispo
 - [x] Conexão com o protocolo MQTT
 - [x] Possibilidade de troca do endereço, usuário e senha do servidor
 - [x] Atualização do status do dispositivo em tempo real
-- [ ] Implementação do padrão de projeto MVP
+- [ ] Implementação do padrão de projeto MVVM
 - [ ] Melhorar retorno do tratamento de erros de conexão
 - [ ] Possibilidade de conexão através de DNS
 - [ ] Refinar Layout
