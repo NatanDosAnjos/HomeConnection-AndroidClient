@@ -1,48 +1,51 @@
 package com.example.automatize.model
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
-import android.view.View
-import android.widget.Toast
-import com.example.automatize.activity.SettingActivity
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.example.automatize.handler.MqttCallbackHandler
-import com.example.automatize.helper.PrefsConfig
-import com.example.automatize.util.changeUi
-import com.google.android.material.snackbar.Snackbar
+import com.example.automatize.repository.PrefsConfig
 import com.google.gson.Gson
 import org.eclipse.paho.android.service.MqttAndroidClient
-import org.eclipse.paho.client.mqttv3.*
+import org.eclipse.paho.client.mqttv3.IMqttActionListener
+import org.eclipse.paho.client.mqttv3.IMqttToken
+import org.eclipse.paho.client.mqttv3.MqttClient
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 
-class ServerToConnect(private val context: Context, private val myView: View) {
+class ServerToConnect {
 
     companion object {
-        @JvmStatic
-        val CLIENT_ID = MqttClient.generateClientId()!!
-
-        @JvmStatic
-        val devicesList = mutableListOf<Device>()
+       @JvmStatic lateinit var context: Context
     }
 
+    private val devicesList = mutableListOf<Device>()
+    val devicesLiveData = MutableLiveData<MutableList<Device>>()
+    //private val devicesList = mutableListOf<Device>()
+
+    private var receivedMessage: MutableLiveData<String> = MutableLiveData()
+    var message: LiveData<String> = receivedMessage
+    private var receivedDevice: MutableLiveData<Device?> = MutableLiveData()
+    var device: LiveData<Device?> = receivedDevice
+
+    private val CLIENT_ID = MqttClient.generateClientId()!!
+
+
     private lateinit var sharedPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener
-    lateinit var qualityOfServiceArray: IntArray
-    lateinit var subscribeArray: Array<String>
     private val mqttConnectOptions = MqttConnectOptions()
     var clientMqtt: MqttAndroidClient
     private val prefsConfig = PrefsConfig()
-    var runnable = Runnable { }
 
 
-    private var serverLocalIp = prefsConfig.getValueOfPreferences(context, PrefsConfig.LOCAL_IP_KEY_NAME)
+    private var serverLocalIp =
+        prefsConfig.getValueOfPreferences(context, PrefsConfig.LOCAL_IP_KEY_NAME)
         set(value) {
             field = value
-            if (value.isNotEmpty()) {
-                changeServerURIs(value, serverDns)
-            }
+            /*if (value.isNotEmpty()) {
+                //changeServerURIs(value, serverDns)
+            }*/
         }
-
-    private var serverDns = prefsConfig.getValueOfPreferences(context, PrefsConfig.DNS_KEY_NAME)
 
     private var password = prefsConfig.getValueOfPreferences(context, PrefsConfig.PASSWORD_KEY_NAME)
         set(value) {
@@ -59,16 +62,15 @@ class ServerToConnect(private val context: Context, private val myView: View) {
             }
         }
     private var port = prefsConfig.getValueOfPreferences(context, PrefsConfig.PORT_KEY_NAME)
-    private val serverURIs = mutableListOf("$serverLocalIp:$port", "$serverDns:$port")
-
+    //private val serverURIs = mutableListOf("$serverLocalIp:$port", "$serverDns:$port")
 
 
     init {
         try {
-            mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
+            //mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
-            showSnackbar("IP ou DNS são inválidos")
+            //showSnackbar("IP ou DNS são inválidos")
         }
         mqttConnectOptions.isAutomaticReconnect = true
         mqttConnectOptions.connectionTimeout = 2
@@ -81,18 +83,20 @@ class ServerToConnect(private val context: Context, private val myView: View) {
     }
 
 
-    private fun changeServerURIs(localIp: String, dns: String) {
+    /*private fun changeServerURIs(localIp: String, dns: String) {
         serverURIs[0] = "$localIp:$port"
         serverURIs[1] = "$dns:$port"
         mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
         reconnect()
 
-    }
+    }*/
 
 
     private fun connect() {
+        val callback = MqttCallbackHandler(context)
+
         clientMqtt = MqttAndroidClient(context, "$serverLocalIp:$port", CLIENT_ID)
-        clientMqtt.setCallback(MqttCallbackHandler(context))
+        clientMqtt.setCallback(callback)
 
         clientMqtt.connect(mqttConnectOptions, null, object : IMqttActionListener {
             override fun onSuccess(asyncActionToken: IMqttToken?) {
@@ -100,39 +104,37 @@ class ServerToConnect(private val context: Context, private val myView: View) {
             }
 
             override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                showSnackbar("Falha ao conectar com ${asyncActionToken?.client?.serverURI}")
+                //showSnackbar("Falha ao conectar com ${asyncActionToken?.client?.serverURI}")
                 Log.i("MQTT_CONNECTION", "Falha ao Conectar", exception)
             }
         })
-
     }
-
-    private fun reconnect() {
-        clientMqtt.setCallback(MqttCallbackHandler(context, false))
-        clientMqtt.disconnect().isComplete.let { connect() }
-    }
-
 
     private fun subscribeOnTopics() {
-        subscribeArray
-        qualityOfServiceArray
-
-
         clientMqtt.subscribe(Device.TOPIC_DEVICES_JSON, 2) { topic, message ->
-            if (message.toString() == "l" || message.toString() == "L") {
-                val deviceToDelete = searchDeviceFromTopicWillOrTopicResponse(topic)
-                if (deviceToDelete != null) {
-                    clientMqtt.unsubscribe(arrayOf(deviceToDelete.topicResponse, deviceToDelete.topicWill))
+            if (message.toString().toUpperCase() == Device.COMMAND_OFF) {
+                val deviceIndex = searchDeviceByTopicWillOrTopicResponse(topic)
+                if (deviceIndex != -1) {
+                    val deviceToDelete = devicesList[deviceIndex]
+
+                    clientMqtt.unsubscribe(
+                        arrayOf(
+                            deviceToDelete.topicResponse,
+                            deviceToDelete.topicWill
+                        )
+                    )
                     updateDevicesList(deviceToDelete, true)
                 }
 
             } else {
                 try {
                     val device = Gson().fromJson(message.toString(), Device::class.java)
+                    println("A Menssagem vinda do Broker: $message")
                     if (!deviceExist(device)) {
                         subscribeOnResponseCommand(device)
                         updateDevicesList(device)
                     }
+
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -142,14 +144,32 @@ class ServerToConnect(private val context: Context, private val myView: View) {
 
 
     private fun subscribeOnResponseCommand(device: Device) {
+        receivedDevice = MutableLiveData(device)
         clientMqtt.subscribe(device.topicResponse, 2) { topic, message ->
-            val thisDevice = searchDeviceFromTopicWillOrTopicResponse(topicResponse = topic)
-            thisDevice?.status = message.toString()
-            println("$message ${thisDevice?.name} = ${thisDevice?.status}")
-            runnable.run()
+            receivedMessage = MutableLiveData("$topic+$message")
+            val deviceIndex = searchDeviceByTopicWillOrTopicResponse(topic)
+            if (deviceIndex != -1) {
+                val thisDevice = devicesList[deviceIndex]
+                thisDevice.status = message.toString()
+                devicesList[deviceIndex] = thisDevice
+                updateStatus()
 
+
+
+            } else {
+                println("device não existe na lista")
+                for ((i, d) in devicesList.withIndex()) {
+                    println(" ${d.name}  [$i] ")
+                }
+            }
         }
     }
+
+
+    fun sendCommand(topic: String, payload: String) {
+        clientMqtt.publish(topic, payload.toByteArray(), 1, false )
+    }
+
 
     private fun deviceExist(deviceToCompare: Device): Boolean {
         for (deviceInList in devicesList) {
@@ -162,26 +182,44 @@ class ServerToConnect(private val context: Context, private val myView: View) {
     }
 
 
-    private fun searchDeviceFromTopicWillOrTopicResponse(topicWill: String = " ", topicResponse: String = " "): Device? {
-        for (device in devicesList) {
-           if (device.topicWill == topicWill) {
-                return device
-            } else if (device.topicResponse == topicResponse) {
-                return device
+    private fun searchDeviceByTopicWillOrTopicResponse(topic: String): Int {
+        for ((index, device) in devicesList.withIndex()) {
+            if (device.topicWill == topic || device.topicResponse == topic) {
+                return index
             }
         }
 
-        return null
+        return -1
     }
 
 
     private fun updateDevicesList(device: Device, toRemove: Boolean = false) {
+
         if (!toRemove) {
             devicesList.add(device)
+            devicesLiveData.postValue(devicesList)
+
         } else {
-            devicesList.remove(device)
+            val indexToRemove = getDevicePositionOnDevicesList(device, devicesList)
+            if (indexToRemove >= 0) {
+                devicesList.removeAt(indexToRemove)
+                devicesLiveData.postValue(devicesList)
+            }
         }
-        runnable.run()
+        printDevicesListName(devicesList)
+    }
+
+    private fun updateStatus(list: MutableList<Device> = devicesList) {
+        devicesLiveData.postValue(list)
+    }
+
+    private fun getDevicePositionOnDevicesList(device: Device, list: MutableList<Device>): Int {
+        for ((index, deviceInList) in list.withIndex()) {
+            if (deviceInList.name == device.name) {
+                return index
+            }
+        }
+        return -1
     }
 
 
@@ -196,7 +234,7 @@ class ServerToConnect(private val context: Context, private val myView: View) {
                     password = sharedP.getString(key, null)!!
                 }
                 PrefsConfig.DNS_KEY_NAME -> {
-                    serverDns = sharedP.getString(key, null)!!
+                    //serverDns = sharedP.getString(key, null)!!
                 }
                 PrefsConfig.USER_KEY_NAME -> {
                     user = sharedP.getString(key, null)!!
@@ -210,15 +248,15 @@ class ServerToConnect(private val context: Context, private val myView: View) {
         PrefsConfig().registerListener(context, sharedPrefsListener)
     }
 
-    private fun showSnackbar(message: String) {
-        changeUi(Runnable {
-            Snackbar.make(myView, message, Snackbar.LENGTH_LONG)
-                .setAction("Alterar") {
-                    context.startActivity(Intent(context, SettingActivity::class.java))
-                }.show()
-        })
+    private fun printDevicesListName(list: MutableList<Device>?) {
+        print("[")
+        if (list != null) {
+            for(device in list) {
+                print("${device.name},")
+            }
+        }
+        println("]")
     }
-
 
     /*private fun serverGlobalIp(): String? {
         return try {

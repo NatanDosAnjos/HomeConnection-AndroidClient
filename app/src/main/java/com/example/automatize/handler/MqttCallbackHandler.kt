@@ -9,13 +9,17 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 
 class MqttCallbackHandler(private val context: Context, private val showOnDisconnectionToast: Boolean = true) : MqttCallbackExtended {
     private val tag = "MQTT_Callback_Handler"
+    var onDisconnectRunnable = Runnable {}
+    var onConnectRunnable = Runnable {  }
 
     override fun connectComplete(reconnect: Boolean, serverURI: String?) {
+        onConnectRunnable.run()
         showToast(context, "Conectado")
         Log.i(tag, "Connected to: $serverURI")
     }
 
     override fun connectionLost(cause: Throwable?) {
+        onDisconnectRunnable.run()
         if (showOnDisconnectionToast) {
             showToast(context, "Desconectado")
         }

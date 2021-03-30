@@ -1,20 +1,20 @@
 package com.example.automatize.model
 
-class Device (
-    val name: String,
-    val topicCommand: String,
-    val topicResponse: String,
-    val topicWill: String,
-    private val type: String) {
+class Device(val name: String,
+             val topicCommand: String,
+             val topicResponse: String,
+             val topicWill: String,
+             private val type: String) {
 
-    var status = "l"
+    val hashCode = this.hashCode()
+    var status = COMMAND_OFF
+
 
     //Static Property in Kotlin
     companion object {
         @JvmStatic val TOPIC_DEVICES_JSON = "casa/+/+/+/json"
-        @JvmStatic val COMMAND_PULSE_THIS = "pulseThis"
-        @JvmStatic val COMMAND_TURN_ON = "h"
-        @JvmStatic val COMMAND_TURN_OFF = "l"
+        @JvmStatic val COMMAND_ON = "h"
+        @JvmStatic val COMMAND_OFF = "L"
         @JvmStatic val TYPE_ONOFF = "onOff"
         @JvmStatic val TYPE_PULSE = "pulse"
     }

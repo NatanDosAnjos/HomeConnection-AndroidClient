@@ -14,10 +14,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:name=".di.MyApp">
         <service android:name="org.eclipse.paho.android.service.MqttService"/>
-        <activity android:name=".activity.SettingActivity" />
-        <activity android:name=".activity.MainActivity">
+        <activity android:name="com.example.automatize.view.activity.SettingActivity" />
+        <activity android:name="com.example.automatize.view.activity.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

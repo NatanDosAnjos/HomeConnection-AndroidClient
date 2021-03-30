@@ -1,11 +1,11 @@
-package com.example.automatize.activity
+package com.example.automatize.view.activity
 
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import com.example.automatize.R
-import com.example.automatize.helper.PrefsConfig
+import com.example.automatize.repository.PrefsConfig
 
 class SettingActivity : AppCompatActivity() {
 

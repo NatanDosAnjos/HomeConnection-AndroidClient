@@ -1,7 +1,8 @@
-package com.example.automatize.helper
+package com.example.automatize.repository
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.preference.PreferenceDataStore
 import androidx.preference.PreferenceManager
 
 class PrefsConfig {
@@ -32,6 +33,7 @@ class PrefsConfig {
      * @param map Os valores contidos nesse mapa são equivalentes aos valores key e value do sharedPreferences
      */
     fun saveOnPreferences(context: Context, map: Map<String, String>) {
+
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val editor = prefs.edit()
         for ((key, value) in map) {
@@ -48,6 +50,8 @@ class PrefsConfig {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return prefs.getString(key, null)?: ""
     }
+
+
 
     /**
      * @param context O contexto para instanciar uma Shared Preference

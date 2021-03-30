@@ -1,51 +1,53 @@
-package com.example.automatize.activity
+package com.example.automatize.view.activity
 
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.automatize.R
-import com.example.automatize.adapter.MainAdapter
-import com.example.automatize.model.Device
 import com.example.automatize.model.ServerToConnect
-import com.example.automatize.util.changeUi
+import com.example.automatize.view.activity.adapter.MainAdapter
+import com.example.automatize.viewmodel.MainViewModel
+import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var server: ServerToConnect
-    private lateinit var viewAdapter: MainAdapter
+    private val viewModel: MainViewModel by  viewModel()
+    lateinit var mAdapter: MainAdapter
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-
-        server = ServerToConnect(this, recyclerView)
-        server.qualityOfServiceArray = intArrayOf(2)
-        server.subscribeArray = arrayOf(Device.TOPIC_DEVICES_JSON)
-
-        val viewManager = LinearLayoutManager(this)
-        viewAdapter = MainAdapter(ServerToConnect.devicesList, server)
-
-        server.runnable = Runnable {
-            changeUi(Runnable { viewAdapter.notifyDataSetChanged() })
-        }
-
-        recyclerView.apply {
-            setHasFixedSize(true)
-            layoutManager = viewManager
-            adapter = viewAdapter
-        }
+        mAdapter = MainAdapter()
+        mAdapter.getDeviceToCommand().observe(this, {
+            viewModel.changeStatus(it)
+        })
+        ServerToConnect.context = this
     }
 
     override fun onStart() {
         super.onStart()
+
+        recyclerView.apply {
+            setHasFixedSize(true)
+            adapter = mAdapter
+            layoutManager = LinearLayoutManager(applicationContext)
+            layoutManager?.canScrollHorizontally()
+        }
+
+        viewModel.getDevices().observe(this, {
+            println(it)
+            mAdapter.updateList(it)
+        })
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
