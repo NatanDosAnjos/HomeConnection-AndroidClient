@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.automatize.R
 import com.example.automatize.model.ServerToConnect
@@ -19,21 +17,21 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by  viewModel()
-    lateinit var mAdapter: MainAdapter
+    private lateinit var mAdapter: MainAdapter
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         mAdapter = MainAdapter()
-        mAdapter.getDeviceToCommand().observe(this, {
-            viewModel.changeStatus(it)
-        })
         ServerToConnect.context = this
     }
 
     override fun onStart() {
         super.onStart()
+        mAdapter.getDeviceToCommand().observe(this, {
+            viewModel.changeStatus(it)
+        })
 
         recyclerView.apply {
             setHasFixedSize(true)
@@ -47,7 +45,6 @@ class MainActivity : AppCompatActivity() {
             mAdapter.updateList(it)
         })
     }
-
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)

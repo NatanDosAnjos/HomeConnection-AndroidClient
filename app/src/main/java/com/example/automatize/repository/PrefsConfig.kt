@@ -2,7 +2,6 @@ package com.example.automatize.repository
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.preference.PreferenceDataStore
 import androidx.preference.PreferenceManager
 
 class PrefsConfig {

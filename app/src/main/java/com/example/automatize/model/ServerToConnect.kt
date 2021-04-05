@@ -3,7 +3,6 @@ package com.example.automatize.model
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.automatize.handler.MqttCallbackHandler
 import com.example.automatize.repository.PrefsConfig
@@ -13,6 +12,7 @@ import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttToken
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import java.util.*
 
 class ServerToConnect {
 
@@ -25,16 +25,14 @@ class ServerToConnect {
     //private val devicesList = mutableListOf<Device>()
 
     private var receivedMessage: MutableLiveData<String> = MutableLiveData()
-    var message: LiveData<String> = receivedMessage
     private var receivedDevice: MutableLiveData<Device?> = MutableLiveData()
-    var device: LiveData<Device?> = receivedDevice
 
     private val CLIENT_ID = MqttClient.generateClientId()!!
 
 
     private lateinit var sharedPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener
     private val mqttConnectOptions = MqttConnectOptions()
-    var clientMqtt: MqttAndroidClient
+    private var clientMqtt: MqttAndroidClient
     private val prefsConfig = PrefsConfig()
 
 
@@ -112,7 +110,7 @@ class ServerToConnect {
 
     private fun subscribeOnTopics() {
         clientMqtt.subscribe(Device.TOPIC_DEVICES_JSON, 2) { topic, message ->
-            if (message.toString().toUpperCase() == Device.COMMAND_OFF) {
+            if (message.toString().toUpperCase(Locale.ENGLISH) == Device.COMMAND_OFF) {
                 val deviceIndex = searchDeviceByTopicWillOrTopicResponse(topic)
                 if (deviceIndex != -1) {
                     val deviceToDelete = devicesList[deviceIndex]
