@@ -2,115 +2,109 @@ package com.example.automatize.model
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.NetworkCapabilities
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
+import com.example.automatize.connection.Server
 import com.example.automatize.handler.MqttCallbackHandler
+import com.example.automatize.helper.ConnectionHelper
 import com.example.automatize.repository.PrefsConfig
 import com.google.gson.Gson
 import org.eclipse.paho.android.service.MqttAndroidClient
-import org.eclipse.paho.client.mqttv3.IMqttActionListener
-import org.eclipse.paho.client.mqttv3.IMqttToken
-import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import org.eclipse.paho.client.mqttv3.MqttException
 import java.util.*
 
-class ServerToConnect {
-
-    companion object {
-       @JvmStatic lateinit var context: Context
-    }
+class ServerToConnect(val context: Context) {
 
     private val devicesList = mutableListOf<Device>()
     val devicesLiveData = MutableLiveData<MutableList<Device>>()
-    //private val devicesList = mutableListOf<Device>()
-
     private var receivedMessage: MutableLiveData<String> = MutableLiveData()
     private var receivedDevice: MutableLiveData<Device?> = MutableLiveData()
-
-    private val CLIENT_ID = MqttClient.generateClientId()!!
-
-
     private lateinit var sharedPrefsListener: SharedPreferences.OnSharedPreferenceChangeListener
-    private val mqttConnectOptions = MqttConnectOptions()
-    private var clientMqtt: MqttAndroidClient
     private val prefsConfig = PrefsConfig()
+    private val mqttConnectOptions: MqttConnectOptions = MqttConnectOptions()
+    private var oldConnectionTypeName = ""
 
-
-    private var serverLocalIp =
-        prefsConfig.getValueOfPreferences(context, PrefsConfig.LOCAL_IP_KEY_NAME)
-        set(value) {
-            field = value
-            /*if (value.isNotEmpty()) {
-                //changeServerURIs(value, serverDns)
-            }*/
-        }
-
-    private var password = prefsConfig.getValueOfPreferences(context, PrefsConfig.PASSWORD_KEY_NAME)
+    // To Server Object
+    private val callback = MqttCallbackHandler(context)
+    private var server: Server
+    private lateinit var clientMqtt: MqttAndroidClient
+    private var connectionHel = ConnectionHelper(context)
+    private var serverLocalIp = prefsConfig.getValueOfPreferences(PrefsConfig.LOCAL_IP_KEY_NAME)
+    private var serverGlobalIP = prefsConfig.getValueOfPreferences(PrefsConfig.GLOBAL_IP_KEY_NAME)
+    private var password = prefsConfig.getValueOfPreferences(PrefsConfig.PASSWORD_KEY_NAME)
         set(value) {
             field = value
             if (value.isNotEmpty()) {
                 mqttConnectOptions.password = value.toCharArray()
             }
         }
-    private var user = prefsConfig.getValueOfPreferences(context, PrefsConfig.USER_KEY_NAME)
+    private var user = prefsConfig.getValueOfPreferences(PrefsConfig.USER_KEY_NAME)
         set(value) {
             field = value
             if (value.isNotEmpty()) {
                 mqttConnectOptions.userName = value
             }
         }
-    private var port = prefsConfig.getValueOfPreferences(context, PrefsConfig.PORT_KEY_NAME)
-    //private val serverURIs = mutableListOf("$serverLocalIp:$port", "$serverDns:$port")
+    private var port = prefsConfig.getValueOfPreferences(PrefsConfig.PORT_KEY_NAME)
+    private var ip: String = serverLocalIp
 
 
     init {
-        try {
-            //mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-            //showSnackbar("IP ou DNS são inválidos")
-        }
+        registerSharedPreferencesListener()
         mqttConnectOptions.isAutomaticReconnect = true
         mqttConnectOptions.connectionTimeout = 2
         mqttConnectOptions.isCleanSession = false
-
-        clientMqtt = MqttAndroidClient(context, "$serverLocalIp:$port", CLIENT_ID)
-
-        registerSharedPreferencesListener()
-        connect()
-    }
-
-
-    /*private fun changeServerURIs(localIp: String, dns: String) {
-        serverURIs[0] = "$localIp:$port"
-        serverURIs[1] = "$dns:$port"
-        mqttConnectOptions.serverURIs = serverURIs.toTypedArray()
-        reconnect()
-
-    }*/
-
-
-    private fun connect() {
-        val callback = MqttCallbackHandler(context)
-
-        clientMqtt = MqttAndroidClient(context, "$serverLocalIp:$port", CLIENT_ID)
-        clientMqtt.setCallback(callback)
-
-        clientMqtt.connect(mqttConnectOptions, null, object : IMqttActionListener {
-            override fun onSuccess(asyncActionToken: IMqttToken?) {
+        server = Server(context, mqttConnectOptions, ip, port)
+        callback.run {
+            onConnectRunnable = Runnable {
                 subscribeOnTopics()
             }
+            onDisconnectRunnable = Runnable {
 
-            override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                //showSnackbar("Falha ao conectar com ${asyncActionToken?.client?.serverURI}")
-                Log.i("MQTT_CONNECTION", "Falha ao Conectar", exception)
             }
-        })
+        }
+        initConnectionHelperAndConnect()
     }
+
+
+    private fun initConnectionHelperAndConnect() {
+        connectionHel.getConnectionLiveData().observeForever {
+            if (!(it.equals(oldConnectionTypeName))) {
+                oldConnectionTypeName = it
+                if (it == ConnectionHelper.WIFI_CONNECTION_KEY) {
+                    ip = serverLocalIp
+                    connectWithNewURL()
+                    Toast.makeText(context, "WiFi", Toast.LENGTH_SHORT).show()
+
+                } else if (it == ConnectionHelper.MOBILE_CONNECTION_KEY) {
+                    ip = serverGlobalIP
+                    connectWithNewURL()
+                    Toast.makeText(context, "mobile", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun connectWithNewURL() {
+        unsubscribeOnTopics(devicesList.toTypedArray())
+        server.disconnect()
+        server = Server(context, mqttConnectOptions, ip, port)
+        server.callback = callback
+        clientMqtt = server.connect()
+    }
+
 
     private fun subscribeOnTopics() {
         clientMqtt.subscribe(Device.TOPIC_DEVICES_JSON, 2) { topic, message ->
-            if (message.toString().toUpperCase(Locale.ENGLISH) == Device.COMMAND_OFF) {
+            Log.println(Log.DEBUG, "ServerToConnect - 103", topic.toString())
+            Log.println(Log.INFO, "ServerToConnect - 104: ", message.toString())
+            if (message.toString()
+                    .toUpperCase(Locale.ENGLISH) == Device.COMMAND_OFF || message.toString()
+                    .isEmpty()
+            ) {
                 val deviceIndex = searchDeviceByTopicWillOrTopicResponse(topic)
                 if (deviceIndex != -1) {
                     val deviceToDelete = devicesList[deviceIndex]
@@ -127,7 +121,6 @@ class ServerToConnect {
             } else {
                 try {
                     val device = Gson().fromJson(message.toString(), Device::class.java)
-                    println("A Menssagem vinda do Broker: $message")
                     if (!deviceExist(device)) {
                         subscribeOnResponseCommand(device)
                         updateDevicesList(device)
@@ -138,6 +131,25 @@ class ServerToConnect {
                 }
             }
         }
+    }
+
+
+    private fun unsubscribeOnTopics(devicesList: Array<Device>) {
+        for (device in devicesList) {
+            Log.i("Server-138", "Tópico a ser desinscrito: ${device.topicResponse}")
+            try {
+                clientMqtt.unsubscribe(device.topicResponse)
+
+            } catch (e: MqttException) {
+                e.printStackTrace()
+            }
+            clearDevicesList(devicesList)
+        }
+    }
+
+    private fun clearDevicesList(devicesList: Array<Device>) {
+        this.devicesList.removeAll(devicesList)
+        devicesLiveData.postValue(this.devicesList)
     }
 
 
@@ -152,10 +164,7 @@ class ServerToConnect {
                 devicesList[deviceIndex] = thisDevice
                 updateStatus()
 
-
-
             } else {
-                println("device não existe na lista")
                 for ((i, d) in devicesList.withIndex()) {
                     println(" ${d.name}  [$i] ")
                 }
@@ -165,7 +174,7 @@ class ServerToConnect {
 
 
     fun sendCommand(topic: String, payload: String) {
-        clientMqtt.publish(topic, payload.toByteArray(), 1, false )
+        clientMqtt.publish(topic, payload.toByteArray(), 1, false)
     }
 
 
@@ -200,6 +209,7 @@ class ServerToConnect {
         } else {
             val indexToRemove = getDevicePositionOnDevicesList(device, devicesList)
             if (indexToRemove >= 0) {
+                unsubscribeOnTopics(arrayOf(devicesList[indexToRemove]))
                 devicesList.removeAt(indexToRemove)
                 devicesLiveData.postValue(devicesList)
             }
@@ -227,12 +237,13 @@ class ServerToConnect {
 
                 PrefsConfig.LOCAL_IP_KEY_NAME -> {
                     serverLocalIp = sharedP.getString(key, null)!!
+                    Log.i("Server-229", serverLocalIp)
                 }
                 PrefsConfig.PASSWORD_KEY_NAME -> {
                     password = sharedP.getString(key, null)!!
                 }
-                PrefsConfig.DNS_KEY_NAME -> {
-                    //serverDns = sharedP.getString(key, null)!!
+                PrefsConfig.GLOBAL_IP_KEY_NAME -> {
+                    serverGlobalIP = sharedP.getString(key, null)!!
                 }
                 PrefsConfig.USER_KEY_NAME -> {
                     user = sharedP.getString(key, null)!!
@@ -241,30 +252,43 @@ class ServerToConnect {
                     port = sharedP.getString(key, null)!!
                 }
             }
+            connectionHel.whichConnectionType()
+            reassignIpVariable(connectionHel.whichConnectionType())
+            connectWithNewURL()
         }
+        PrefsConfig().registerListener(sharedPrefsListener)
+    }
 
-        PrefsConfig().registerListener(context, sharedPrefsListener)
+    private fun reassignIpVariable(networkTransportNumber: Int) {
+        if (networkTransportNumber == NetworkCapabilities.TRANSPORT_WIFI) {
+            ip = serverLocalIp
+        } else if (networkTransportNumber == NetworkCapabilities.TRANSPORT_CELLULAR) {
+            ip = serverGlobalIP
+        }
     }
 
     private fun printDevicesListName(list: MutableList<Device>?) {
         print("[")
         if (list != null) {
-            for(device in list) {
+            for (device in list) {
                 print("${device.name},")
             }
         }
         println("]")
     }
-
-    /*private fun serverGlobalIp(): String? {
-        return try {
-            val inetAddressObject = InetAddress.getByName(serverDns)
-            val ip: String? = inetAddressObject.hostAddress
-            ip
-
-        } catch (e: Exception) {
-            null
-        }
-    }*/
 }
+
+/*private fun serverGlobalIp(): String? {
+    return try {
+        val inetAddressObject = InetAddress.getByName(serverDns)
+        val ip: String? = inetAddressObject.hostAddress
+        ip
+
+    } catch (e: Exception) {
+        null
+    }
+}*/
+
+
+
 

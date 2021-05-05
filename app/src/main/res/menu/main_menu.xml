@@ -6,5 +6,11 @@
         android:id="@+id/settings"
         android:icon="@drawable/ic_baseline_settings_48"
         android:title="@string/serverPortConfigId"
-        app:showAsAction="always" />
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/app_bar_switch"
+        android:title="@string/connectionMode"
+        android:visible="false"
+        app:actionLayout="@layout/switch_item"
+        app:showAsAction="always|withText" />
 </menu>

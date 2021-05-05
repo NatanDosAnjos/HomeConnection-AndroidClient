@@ -1,17 +1,22 @@
 package com.example.automatize.view.activity.adapter
 
+import android.content.Context
+import android.content.res.Configuration
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import androidx.appcompat.widget.SwitchCompat
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.RecyclerView
 import com.example.automatize.R
 import com.example.automatize.model.Device
+import java.util.*
 
-class MainAdapter(): RecyclerView.Adapter<DeviceViewHolder>() {
+class MainAdapter(val context: Context): RecyclerView.Adapter<DeviceViewHolder>() {
 
     private var devicesList = mutableListOf<Device>()
     private var deviceToCommand = MutableLiveData<Device>()
@@ -27,21 +32,51 @@ class MainAdapter(): RecyclerView.Adapter<DeviceViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DeviceViewHolder {
         val listItemView = LayoutInflater.from(parent.context)
-            .inflate(R.layout.device_item, parent, false) as LinearLayout
+            .inflate(R.layout.card_view_layout, parent, false) as GridLayout
 
         return DeviceViewHolder(listItemView)
     }
 
     override fun onBindViewHolder(holder: DeviceViewHolder, position: Int) {
-        holder.switch.text = devicesList[position].name
-        holder.switch.isChecked = devicesList[position].status == Device.COMMAND_ON
-        holder.switch.setOnClickListener {
-            devicesList[position].status = if (holder.switch.isChecked) Device.COMMAND_ON else Device.COMMAND_OFF
+
+        holder.deviceName.text = devicesList[position].name
+        holder.deviceStatus.text = setDeviceAttributesButton(holder.image, devicesList[position].status)
+        holder.cardView.setOnClickListener {
+            devicesList[position].status = if (devicesList[position].status == Device.COMMAND_OFF) Device.COMMAND_ON else Device.COMMAND_OFF
             deviceToCommand.postValue(devicesList[position])
         }
 
-        holder.switch.setOnLongClickListener {
+        holder.cardView.setOnLongClickListener {
             true
+        }
+    }
+
+    private fun setDeviceAttributesButton(imageView: ImageView, status: String): String {
+        return if (status.toUpperCase(Locale.ROOT) == Device.COMMAND_ON) {
+            changeImageNightModeCompat(imageView, toOn = true)
+            context.getString(R.string.deviceOn)
+        } else {
+            changeImageNightModeCompat(imageView, toOn = false)
+            context.getString(R.string.deviceOff)
+        }
+    }
+
+    private fun changeImageNightModeCompat(imageView: ImageView, toOn: Boolean) {
+        // uimode Retorna Um Inteiro 1 Número A Mais Do Que As Constantes Definidas Em Configuration
+        val currentMode = context.resources.configuration.uiMode
+        if ( currentMode == Configuration.UI_MODE_NIGHT_YES+1 ) {
+            if (toOn) {
+                imageView.setImageResource(R.drawable.ic_baseline_emoji_objects_yellow_72)
+            } else {
+                imageView.setImageResource(R.drawable.ic_baseline_emoji_objects_72)
+            }
+
+        } else {
+            if (toOn) {
+                imageView.setImageResource(R.drawable.ic_baseline_emoji_objects_yellow_72)
+            } else {
+                imageView.setImageResource(R.drawable.ic_baseline_emoji_objects_black_72)
+            }
         }
     }
 
@@ -51,7 +86,9 @@ class MainAdapter(): RecyclerView.Adapter<DeviceViewHolder>() {
 }
 
 class DeviceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)  {
-    val switch: SwitchCompat = itemView.findViewById(R.id.switchBtn)
+    val image: ImageView = itemView.findViewById(R.id.lamp)
+    val cardView: CardView = itemView.findViewById(R.id.CV_carView)
+    val deviceName: TextView = itemView.findViewById(R.id.deviceName)
+    val deviceStatus: TextView = itemView.findViewById(R.id.deviceStatus)
+
 }
-
-

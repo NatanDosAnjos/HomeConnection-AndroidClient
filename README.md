@@ -17,9 +17,10 @@ Automatize é uma aplicação simples, que possibilita a comunicação com dispo
 - [x] Atualização do status do dispositivo em tempo real
 - [x] Implementação do padrão de projeto MVVM
 - [x] Compatibilidade com Dark Mode
-- [ ] Correção de bugs e melhoria de desempenho
+- [x] Refatoração de código
 - [ ] Melhorar retorno do tratamento de erros de conexão
-- [ ] Possibilidade de conexão através de DNS
+- [ ] Correção de bugs e melhoria de desempenho
+- [ ] Possibilidade de conexão automática através de DNS de forma estável
 - [ ] Refinar Layout
 
 ---

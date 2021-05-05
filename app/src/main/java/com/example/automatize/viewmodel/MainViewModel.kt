@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import com.example.automatize.model.Device
 import com.example.automatize.model.ServerToConnect
 
-class MainViewModel(private val server: ServerToConnect): ViewModel() {
+class MainViewModel(private var server: ServerToConnect): ViewModel() {
 
     fun getDevices(): LiveData<MutableList<Device>> {
         return server.devicesLiveData

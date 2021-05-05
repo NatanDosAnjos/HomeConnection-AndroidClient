@@ -6,7 +6,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val mainModule = module {
-    single { ServerToConnect() }
+    single { ServerToConnect(context = get()) }
 
     viewModel {
         MainViewModel(server = get())

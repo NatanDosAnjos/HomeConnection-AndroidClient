@@ -1,49 +1,56 @@
 package com.example.automatize.view.activity
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.GridView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.automatize.R
-import com.example.automatize.model.ServerToConnect
 import com.example.automatize.view.activity.adapter.MainAdapter
 import com.example.automatize.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.card_view_layout.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class MainActivity : AppCompatActivity() {
 
-    private val viewModel: MainViewModel by  viewModel()
-    private lateinit var mAdapter: MainAdapter
+    private val viewModel: MainViewModel by viewModel()
+    private var mAdapter: MainAdapter = MainAdapter(this)
+    private lateinit var gridView: GridView
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        mAdapter = MainAdapter()
-        ServerToConnect.context = this
-    }
 
-    override fun onStart() {
-        super.onStart()
+        viewModel.getDevices().observe(this, {
+            mAdapter.updateList(it)
+        })
+
         mAdapter.getDeviceToCommand().observe(this, {
             viewModel.changeStatus(it)
         })
+    }
+
+
+    override fun onStart() {
+        super.onStart()
 
         recyclerView.apply {
             setHasFixedSize(true)
             adapter = mAdapter
-            layoutManager = LinearLayoutManager(applicationContext)
-            layoutManager?.canScrollHorizontally()
+            layoutManager = GridLayoutManager(this@MainActivity, 2)
         }
+    }
 
-        viewModel.getDevices().observe(this, {
-            println(it)
-            mAdapter.updateList(it)
-        })
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        gridView.numColumns = if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) 3 else 2
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -57,5 +64,4 @@ class MainActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-
 }

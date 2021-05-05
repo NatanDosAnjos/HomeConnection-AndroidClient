@@ -9,7 +9,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 
 class MqttCallbackHandler(private val context: Context, private val showOnDisconnectionToast: Boolean = true) : MqttCallbackExtended {
     private val tag = "MQTT_Callback_Handler"
-    var onDisconnectRunnable = Runnable {}
+    var onDisconnectRunnable = Runnable {  }
     var onConnectRunnable = Runnable {  }
 
     override fun connectComplete(reconnect: Boolean, serverURI: String?) {
@@ -21,7 +21,7 @@ class MqttCallbackHandler(private val context: Context, private val showOnDiscon
     override fun connectionLost(cause: Throwable?) {
         onDisconnectRunnable.run()
         if (showOnDisconnectionToast) {
-            showToast(context, "Desconectado")
+            //showToast(context, "Desconectado")
         }
         Log.i(tag, "Connection Lost", cause)
 

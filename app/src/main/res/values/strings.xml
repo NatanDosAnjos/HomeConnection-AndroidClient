@@ -18,11 +18,16 @@
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
 
     <!-- Buttons Text -->
-    <string name="serverPortConfigId">settings</string>
+    <string name="serverPortConfigId">Settings</string>
     <string name="port">Porta</string>
     <string name="ServerAddress">Ip local do Servidor</string>
     <string name="btn_salvar">Salvar</string>
     <string name="dnsServerAddress">Endereço DNS do Servidor</string>
     <string name="user">Usuário</string>
     <string name="userPassword">Senha</string>
+    <string name="connectionMode">WiFi/3G</string>
+
+    <!-- MainAdapter Text -->
+    <string name="deviceOn">Ligado</string>
+    <string name="deviceOff">Desligado</string>
 </resources>

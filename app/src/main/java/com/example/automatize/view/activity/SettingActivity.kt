@@ -16,19 +16,11 @@ class SettingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setting)
 
-        val oldDns = removeProtocolFromSharedPreferences(
-            prefs.getValueOfPreferences(
-                this, PrefsConfig.DNS_KEY_NAME
-            )
-        )
-        val oldIp = removeProtocolFromSharedPreferences(
-            prefs.getValueOfPreferences(
-                this, PrefsConfig.LOCAL_IP_KEY_NAME
-            )
-        )
-        val oldUser = prefs.getValueOfPreferences(this, PrefsConfig.USER_KEY_NAME)
-        val oldUserPassword = prefs.getValueOfPreferences(this, PrefsConfig.PASSWORD_KEY_NAME)
-        val oldPort = prefs.getValueOfPreferences(this, PrefsConfig.PORT_KEY_NAME)
+        val oldDns = removeProtocolFromSharedPreferences( prefs.getValueOfPreferences( PrefsConfig.GLOBAL_IP_KEY_NAME ))
+        val oldIp = removeProtocolFromSharedPreferences( prefs.getValueOfPreferences( PrefsConfig.LOCAL_IP_KEY_NAME ))
+        val oldUser = prefs.getValueOfPreferences( PrefsConfig.USER_KEY_NAME )
+        val oldUserPassword = prefs.getValueOfPreferences( PrefsConfig.PASSWORD_KEY_NAME )
+        val oldPort = prefs.getValueOfPreferences( PrefsConfig.PORT_KEY_NAME )
 
         val dnsView = findViewById<EditText>(R.id.editText_dnsServer)
         dnsView.setText(oldDns)
@@ -57,7 +49,7 @@ class SettingActivity : AppCompatActivity() {
             }
 
             if (dns != oldDns && dns != "") {
-                map[PrefsConfig.DNS_KEY_NAME] = "$protocol://$dns"
+                map[PrefsConfig.GLOBAL_IP_KEY_NAME] = "$protocol://$dns"
             }
 
             if (user != oldUser && user != "") {
@@ -68,7 +60,7 @@ class SettingActivity : AppCompatActivity() {
                 map[PrefsConfig.PASSWORD_KEY_NAME] = userPassword
             }
 
-            prefs.saveOnPreferences(this, map)
+            prefs.saveOnPreferences(map)
             finish()
         }
     }

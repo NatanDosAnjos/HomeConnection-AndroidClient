@@ -3,8 +3,11 @@ package com.example.automatize.repository
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class PrefsConfig {
+class PrefsConfig: KoinComponent {
+    private val context: Context by inject()
 
     /**
      * Contem os nomes das keys principais no shared Preference padrão
@@ -24,14 +27,13 @@ class PrefsConfig {
         val PORT_KEY_NAME = "port"
 
         @JvmStatic
-        val DNS_KEY_NAME = "dns"
+        val GLOBAL_IP_KEY_NAME = "dns"
     }
 
     /**
-     * @param context O contexto para instanciar uma SharedPreference
      * @param map Os valores contidos nesse mapa são equivalentes aos valores key e value do sharedPreferences
      */
-    fun saveOnPreferences(context: Context, map: Map<String, String>) {
+    fun saveOnPreferences(map: Map<String, String>) {
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val editor = prefs.edit()
@@ -42,10 +44,9 @@ class PrefsConfig {
     }
 
     /**
-     * @param context O contexto para instanciar uma Shared Preference
      * @param key O nome da referência que deseja recuperar
      */
-    fun getValueOfPreferences(context: Context, key: String): String {
+    fun getValueOfPreferences(key: String): String {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return prefs.getString(key, null)?: ""
     }
@@ -53,10 +54,9 @@ class PrefsConfig {
 
 
     /**
-     * @param context O contexto para instanciar uma Shared Preference
      * @param listener O callback que irá ser chamado
      */
-    fun registerListener(context: Context, listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         prefs.registerOnSharedPreferenceChangeListener(listener)
     }
