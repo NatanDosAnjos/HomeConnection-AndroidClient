@@ -5,7 +5,6 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.GridView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.automatize.R
@@ -20,7 +19,6 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModel()
     private var mAdapter: MainAdapter = MainAdapter(this)
-    private lateinit var gridView: GridView
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,13 +41,12 @@ class MainActivity : AppCompatActivity() {
         recyclerView.apply {
             setHasFixedSize(true)
             adapter = mAdapter
-            layoutManager = GridLayoutManager(this@MainActivity, 2)
+            layoutManager = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                GridLayoutManager(this@MainActivity, 3)
+            } else {
+                GridLayoutManager(this@MainActivity, 2)
+            }
         }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        gridView.numColumns = if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) 3 else 2
 
     }
 

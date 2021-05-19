@@ -1,12 +1,11 @@
 package com.example.automatize.model
-
 import java.util.*
 
 class Device(val name: String,
              val topicCommand: String,
              val topicResponse: String,
              val topicWill: String,
-             private val type: String) {
+             val type: String) {
 
     //Static Property in Kotlin
     companion object {
@@ -29,12 +28,4 @@ class Device(val name: String,
     init {
         status = COMMAND_OFF
     }
-
-    /*fun isPulseType() : Boolean {
-        return type == TYPE_PULSE
-    }
-
-    fun isOnOffType() : Boolean {
-        return type == TYPE_ONOFF
-    }*/
 }

@@ -42,8 +42,9 @@ class MainAdapter(val context: Context): RecyclerView.Adapter<DeviceViewHolder>(
         holder.deviceName.text = devicesList[position].name
         holder.deviceStatus.text = setDeviceAttributesButton(holder.image, devicesList[position].status)
         holder.cardView.setOnClickListener {
-            devicesList[position].status = if (devicesList[position].status == Device.COMMAND_OFF) Device.COMMAND_ON else Device.COMMAND_OFF
-            deviceToCommand.postValue(devicesList[position])
+            val tmpDevice = instantiateTempDevice(devicesList[position])
+            tmpDevice.status = if (tmpDevice.status == Device.COMMAND_OFF) Device.COMMAND_ON else Device.COMMAND_OFF
+            deviceToCommand.postValue(tmpDevice)
         }
 
         holder.cardView.setOnLongClickListener {
@@ -51,13 +52,25 @@ class MainAdapter(val context: Context): RecyclerView.Adapter<DeviceViewHolder>(
         }
     }
 
+    private fun instantiateTempDevice(d: Device): Device {
+        val device = Device(d.name, d.topicCommand, d.topicResponse, d.topicWill, d.type)
+        device.status = d.status
+        return device
+    }
+
     private fun setDeviceAttributesButton(imageView: ImageView, status: String): String {
-        return if (status.toUpperCase(Locale.ROOT) == Device.COMMAND_ON) {
-            changeImageNightModeCompat(imageView, toOn = true)
-            context.getString(R.string.deviceOn)
-        } else {
-            changeImageNightModeCompat(imageView, toOn = false)
-            context.getString(R.string.deviceOff)
+        return when {
+            status.toUpperCase(Locale.ROOT) == Device.COMMAND_ON -> {
+                changeImageNightModeCompat(imageView, toOn = true)
+                context.getString(R.string.deviceOn)
+            }
+            status.toUpperCase(Locale.ROOT) ==  Device.COMMAND_OFF -> {
+                changeImageNightModeCompat(imageView, toOn = false)
+                context.getString(R.string.deviceOff)
+            }
+            else -> {
+                status
+            }
         }
     }
 

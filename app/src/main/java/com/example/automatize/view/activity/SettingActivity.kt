@@ -10,7 +10,6 @@ import com.example.automatize.repository.PrefsConfig
 class SettingActivity : AppCompatActivity() {
 
     private val prefs = PrefsConfig()
-    private val protocol = "tcp"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,11 +44,11 @@ class SettingActivity : AppCompatActivity() {
             }
 
             if (serverIp != oldIp && serverIp != "") {
-                map[PrefsConfig.LOCAL_IP_KEY_NAME] = "$protocol://$serverIp"
+                map[PrefsConfig.LOCAL_IP_KEY_NAME] = "${PrefsConfig.PROTOCOL_PREFIX}$serverIp"
             }
 
             if (dns != oldDns && dns != "") {
-                map[PrefsConfig.GLOBAL_IP_KEY_NAME] = "$protocol://$dns"
+                map[PrefsConfig.GLOBAL_IP_KEY_NAME] = "${PrefsConfig.PROTOCOL_PREFIX}$dns"
             }
 
             if (user != oldUser && user != "") {
@@ -70,6 +69,6 @@ class SettingActivity : AppCompatActivity() {
      * @return O texto enviado sem o prefixo tcp://
      */
     private fun removeProtocolFromSharedPreferences(text: String): String {
-        return text.removePrefix("$protocol://")
+        return text.removePrefix(PrefsConfig.PROTOCOL_PREFIX)
     }
 }

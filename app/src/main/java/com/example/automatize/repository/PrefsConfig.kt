@@ -28,6 +28,9 @@ class PrefsConfig: KoinComponent {
 
         @JvmStatic
         val GLOBAL_IP_KEY_NAME = "dns"
+
+        @JvmStatic
+        val PROTOCOL_PREFIX = "tcp://"
     }
 
     /**
@@ -49,6 +52,16 @@ class PrefsConfig: KoinComponent {
     fun getValueOfPreferences(key: String): String {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return prefs.getString(key, null)?: ""
+    }
+
+    fun getPreferencesIpWithoutPrefix(key: String): String {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val pureText = prefs.getString(key, null) ?: ""
+        return if(pureText.isEmpty()) {
+            ""
+        } else {
+            pureText.removePrefix("$PROTOCOL_PREFIX://")
+        }
     }
 
 

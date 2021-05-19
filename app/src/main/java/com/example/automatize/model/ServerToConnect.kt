@@ -11,10 +11,15 @@ import com.example.automatize.handler.MqttCallbackHandler
 import com.example.automatize.helper.ConnectionHelper
 import com.example.automatize.repository.PrefsConfig
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
+import java.net.InetAddress
 import java.util.*
+
 
 class ServerToConnect(val context: Context) {
 
@@ -76,8 +81,11 @@ class ServerToConnect(val context: Context) {
                 oldConnectionTypeName = it
                 if (it == ConnectionHelper.WIFI_CONNECTION_KEY) {
                     ip = serverLocalIp
-                    connectWithNewURL()
+                    CoroutineScope(Dispatchers.IO).launch {
+                        isItOnTheSameNetworkAsTheServer()
+                    }
                     Toast.makeText(context, "WiFi", Toast.LENGTH_SHORT).show()
+                    connectWithNewURL()
 
                 } else if (it == ConnectionHelper.MOBILE_CONNECTION_KEY) {
                     ip = serverGlobalIP
@@ -85,6 +93,18 @@ class ServerToConnect(val context: Context) {
                     Toast.makeText(context, "mobile", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+
+    // verifica se está na mesma rede que o servidor.
+    private fun isItOnTheSameNetworkAsTheServer() {
+        val localIp = serverLocalIp.removePrefix(PrefsConfig.PROTOCOL_PREFIX)
+        val address = InetAddress.getByName(localIp)
+        val isConnected = address.isReachable(25)
+        if (!isConnected) {
+            ip = serverGlobalIP
+            connectWithNewURL()
         }
     }
 
@@ -277,17 +297,6 @@ class ServerToConnect(val context: Context) {
         println("]")
     }
 }
-
-/*private fun serverGlobalIp(): String? {
-    return try {
-        val inetAddressObject = InetAddress.getByName(serverDns)
-        val ip: String? = inetAddressObject.hostAddress
-        ip
-
-    } catch (e: Exception) {
-        null
-    }
-}*/
 
 
 
